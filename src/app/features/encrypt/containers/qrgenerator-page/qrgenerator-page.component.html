@@ -1,0 +1,156 @@
+<ion-content class="ion-no-padding">
+  <ion-grid class="ion-no-padding">
+    <ion-row class="ion-no-padding ion-justify-content-start ion-align-items-center">
+      <ion-col size="12" size-md="6" class="ion-padding">
+        <div class="form-container">
+          <ion-text color="primary">
+            <h1>
+              <ion-icon name="qr-code-outline"></ion-icon>
+              <span>Paperize</span>
+            </h1>
+          </ion-text>
+          <ion-text color="medium">
+            <p>
+              Backup as QR code is the most advenced way to store your private key or sensitive data on a secure place.  
+            </p>
+          </ion-text>
+          <ion-text color="primary">
+            <h2>{{(action$|async) === 'encrypt' ? 'Encryption' : 'Decrypting'}} data</h2>
+          </ion-text>
+          <div class="chips-container">
+            <ion-label color="medium" position="stacked">
+              Your secert phrase seed of 12 words
+              <ion-text color="primary">
+                <small (click)="toggleImportSeedWords()">
+                  ({{isImportSeedWords ? 'generate' : 'import'}} seed phrase)
+                </small>
+              </ion-text>
+            </ion-label>
+            <ion-chip 
+                *ngFor="let w of secret; let i = index" 
+                color="primary" 
+                [disabled]="isWoring$ | async"
+                (click)="removeAndGenerateWord(i, !isImportSeedWords)">
+              <ion-label>{{w}}</ion-label>
+              <ion-icon name="close-circle"></ion-icon>
+            </ion-chip>
+            <div class="autocomplet-container ion-padding-top" *ngIf="isImportSeedWords === true">
+              <ion-input 
+                  #inputWordElement
+                  type="text" 
+                  [autofocus]="true"
+                  [hidden]="secret.length >= 12"
+                  [placeholder]="secret.length < 12 ? 'type word...' : 'maximum number of 12 words reached'" 
+                  [disabled]="secret.length >= 12"
+                  [ngClass]="{'active': seedWordList.length > 0}"
+                  (ionChange)="autocomplet($event)"></ion-input>
+              <ion-note [hidden]="secret.length < 12">
+                maximum number of 12 words reached
+              </ion-note>
+              <ion-list *ngIf="seedWordList.length > 0" class="ion-no-padding">
+                <ion-item 
+                    *ngFor="let word of seedWordList" 
+                    (click)="selectWord(word); inputWordElement.value = '';inputWordElement.setFocus()">
+                  <ion-label class="ion-padding-start">
+                    {{word}}
+                  </ion-label>
+                  <ion-button slot="end" fill="none">
+                    <ion-icon color="primary" slot="icon-only" name="add-circle"></ion-icon>
+                  </ion-button>
+                </ion-item>
+              </ion-list>
+            </div>
+          </div>
+          <ion-item 
+                lines="none" 
+                [disabled]="isWoring$ | async"
+                *ngIf="(action$|async) === 'encrypt'">
+            <ion-label color="medium" position="stacked">Datas to encrypt</ion-label>
+            <ion-textarea 
+                #textareaEl 
+                [disabled]="(isWoring$ | async )||false"
+                [(ngModel)]="text" placeholder="type data to encrypt here..."></ion-textarea>
+          </ion-item>
+          <ion-button 
+              class="ion-margin-vertical" 
+              *ngIf="(action$|async) === 'encrypt'"
+              [disabled]="(isWoring$ | async )|| (secret.length < 12) || (text.length === 0)"
+              (click)="encrypt()">
+            {{actions}}
+          </ion-button>
+          <div *ngIf="(action$|async) === 'decrypt'">
+            <ion-button 
+                class="ion-margin-vertical" 
+                (click)="inputFile.click()">
+              file scan
+            </ion-button>
+            <ion-button 
+                class="ion-margin-vertical" 
+                (click)="scanWithCamera()">
+              camera scan
+            </ion-button>
+            <input 
+                #inputFile
+                title="file"
+                type="file" 
+                accept="image/*" 
+                capture="camera"
+                [hidden]="true" 
+                (change)="scanFile($event)" />
+          </div>
+          <ion-text color="medium">
+            <p *ngIf="(action$|async) === 'encrypt'">
+              You already have a backup QrCode? <br/>
+              Go to <a [routerLink]="'./'" [queryParams]="{'action': 'decrypt'}">decrypt</a>.
+            </p>
+            <p *ngIf="(action$|async) === 'decrypt'">
+              You want backup secret data as QR Code? <br/>
+              Go to <a [routerLink]="'./'" [queryParams]="{'action': 'encrypt'}">encrypt</a>.
+            </p>
+          </ion-text>
+        </div>
+      </ion-col>
+      <ion-col *ngIf="(action$|async) === 'encrypt'" size="12" size-md="6" class="canvas-conntainer ion-no-padding ion-text-center">
+        <div *ngIf="(isWoring$ | async); else defaultMessage" class="info-text">
+          <ion-spinner class="ion-margin-vertical" color="light"></ion-spinner>
+          <ion-text color="light">
+            <small *ngIf="(serviceState$|async) as state">
+              {{state}}
+            </small>
+          </ion-text>
+        </div>
+        <ng-template #defaultMessage>
+          <div class="info-text">
+            <ion-text *ngIf="!(result$|async)?.encryptedText" color="light">
+              <small>
+                Waiting to encrypt your secret data 
+              </small>
+            </ion-text> 
+          </div>
+        </ng-template>
+        <canvas #canvas *ngIf="(result$|async)?.encryptedText"></canvas>
+        <ion-button 
+            fill="none"
+            color="light"
+            *ngIf="(isWoring$ | async) === false && (result$|async)?.shortHash" 
+            (click)="download()">
+            <ion-text color="primary">download</ion-text>
+          </ion-button>
+      </ion-col>
+      <ion-col *ngIf="(action$|async) === 'decrypt'" size="12" size-md="6" class="preview-conntainer ion-no-padding ion-text-center">
+        <div *ngIf="(result$|async)?.decryptedText as decryptedText; else defaultTemplate" class="preview-text">
+            {{decryptedText}}
+        </div>
+        <ng-template #defaultTemplate>
+          <ion-text color="light">
+            <small>
+              Scan QR Code to decrypt secret data
+            </small>
+          </ion-text>
+        </ng-template>
+        <div id="qrcode-reader" width="600px" height="600px"></div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+</ion-content>

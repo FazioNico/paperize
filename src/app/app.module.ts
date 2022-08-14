@@ -1,18 +1,36 @@
-import { NgModule } from '@angular/core';
+import { ErrorHandler, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
 
-import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { IonicModule } from '@ionic/angular';
+import { RouterModule } from '@angular/router';
+import { GlobalErrorHandlerService } from './services/global-error-handler.service';
 
 @NgModule({
-  declarations: [
-    AppComponent
+  imports:      [ 
+    BrowserModule, 
+    FormsModule, 
+    IonicModule.forRoot(),
+    RouterModule.forRoot([
+      {
+        path: 'backup',
+        loadChildren: () => import('./features/encrypt/encrypt.module').then(m => m.EncryptModule)
+      },
+      {
+        path: '',
+        redirectTo: 'backup',
+        pathMatch: 'full'
+      }
+    ])
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
+  declarations: [ AppComponent ],
+  bootstrap:    [ AppComponent ],
+  providers:    [
+    {
+      provide: ErrorHandler,
+      useClass: GlobalErrorHandlerService,
+    }
+  ]
 })
 export class AppModule { }
