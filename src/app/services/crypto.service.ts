@@ -22,7 +22,7 @@ const ALGS_SERVICES = [
 export class CryptoService {
 
   public readonly state$: BehaviorSubject<string> = new BehaviorSubject(null as any);
-  private readonly _appToken = 'qrcode-paper-backup';
+  private readonly _appToken = 'paperize-qrcode';
   private readonly _algs: { name: string, service: any }[] = ALGS_SERVICES;
 
   async encryptString(
