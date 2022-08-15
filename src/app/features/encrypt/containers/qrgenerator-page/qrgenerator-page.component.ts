@@ -53,7 +53,6 @@ export class QrgeneratorPageComponent {
   isImportSeedWords = false;
   secret: string[] = generateMnemonic(wordlist).split(' ');
   text: string = '';
-  imgUrl!: string|undefined;
   seedWordList: string[] = [];
 
   constructor(
@@ -91,7 +90,6 @@ export class QrgeneratorPageComponent {
     }
     // toggle global state
     this.isWoring$.next(true);
-    this.imgUrl = undefined;
     const text = this.text;
     // sleep to allow angular gennerate templpate html
     await new Promise((resolve) => setTimeout(resolve, 25));
@@ -100,7 +98,7 @@ export class QrgeneratorPageComponent {
       this.secret.join(' '),
       text
     );
-    this.imgUrl = await this.generateQR(encrypted);
+    const imgUrl = await this.generateQR(encrypted);
     this.result$.next({
       encryptedText: encrypted,
       shortHash
@@ -120,7 +118,7 @@ export class QrgeneratorPageComponent {
         }
       )
       .setbackground('#fff')
-      .drawImage(this.imgUrl as string)
+      .drawImage(imgUrl)
       .drawText(shortHash)
       .build(); 
     // toggle global state
@@ -154,7 +152,7 @@ export class QrgeneratorPageComponent {
     console.log(`Code matched = ${decodedText}`);
   }
 
-  async generateQR(text: string): Promise<string | undefined> {
+  async generateQR(text: string): Promise<string> {
     console.log('[INFO] generating QR code...');
     try {
       const qr =  await toDataURL(text, {
@@ -167,8 +165,7 @@ export class QrgeneratorPageComponent {
       console.log('[INFO] QR code generated.');
       return qr;
     } catch (err) {
-      console.error(err);
-      return undefined;
+      throw err;
     }
   }
 
