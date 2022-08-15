@@ -132,6 +132,7 @@ export class QrgeneratorPageComponent {
   async download() {
     const {shortHash = Date.now().toString()} = await firstValueFrom(this.result$);
     await this._canvasService.download(shortHash);
+    this.result$.next(null as any);
   }
 
   async scanFile($event: any) {

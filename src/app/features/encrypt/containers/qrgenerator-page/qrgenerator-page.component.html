@@ -140,7 +140,12 @@
           </ion-text>
         </div>
       </ion-col>
-      <ion-col *ngIf="(action$|async) === 'encrypt'" size="12" size-md="6" class="canvas-conntainer ion-no-padding ion-text-center">
+      <ion-col 
+          *ngIf="(action$|async) === 'encrypt'" 
+          size="12" 
+          size-md="6" 
+          class="canvas-conntainer ion-no-padding ion-text-center"
+          [ngClass]="{'isHiddenForMobile': !(isWoring$ | async) && !(result$|async)?.encryptedText}">
         <div *ngIf="(isWoring$ | async); else defaultMessage" class="info-text">
           <ion-spinner class="ion-margin-vertical" color="light"></ion-spinner>
           <ion-text color="light">
@@ -167,7 +172,12 @@
             <ion-text color="primary">download</ion-text>
           </ion-button>
       </ion-col>
-      <ion-col *ngIf="(action$|async) === 'decrypt'" size="12" size-md="6" class="preview-conntainer ion-no-padding ion-text-center">
+      <ion-col 
+          *ngIf="(action$|async) === 'decrypt'" 
+          size="12" 
+          size-md="6" 
+          class="preview-conntainer ion-no-padding ion-text-center"
+          [ngClass]="{'isHiddenForMobile': !(isWoring$ | async) && !(result$|async)?.decryptedText}">
         <div *ngIf="(result$|async)?.decryptedText as decryptedText; else defaultTemplate" class="preview-text">
             {{decryptedText}}
         </div>

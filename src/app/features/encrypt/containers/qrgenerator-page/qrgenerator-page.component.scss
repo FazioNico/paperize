@@ -7,7 +7,7 @@
         align-items: center;
         align-content: center;
 
-        font-size: 4.5rem;
+        font-size: 4.2rem;
 
         span {
             margin-left: 0.5rem;
@@ -132,8 +132,17 @@
     .canvas-conntainer, .preview-conntainer {
         position: fixed;
         right: 0;
+        z-index: 10;
     }
     a {
         cursor: pointer;
+    }
+
+    @media screen and (max-width: 768px) {
+
+        .isHiddenForMobile {
+            display: none;
+        }
+        
     }
 }
