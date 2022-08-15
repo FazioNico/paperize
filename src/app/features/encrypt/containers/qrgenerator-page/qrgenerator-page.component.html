@@ -17,14 +17,43 @@
           <ion-text color="primary">
             <h2>{{(action$|async) === 'encrypt' ? 'Encryption' : 'Decrypting'}} data</h2>
           </ion-text>
-          <div class="chips-container">
+          <div class="chips-container" *ngIf="isMnemonicSeedPhrase === false">
             <ion-label color="medium" position="stacked">
-              Your secert phrase seed of 12 words
-              <ion-text color="primary">
-                <small (click)="toggleImportSeedWords()">
-                  ({{isImportSeedWords ? 'generate' : 'import'}} seed phrase)
+              Your secert password
+                <small (click)="toggleIsMnemonicSeedPhrase()">
+                  (
+                      <ion-text color="primary">
+                        use seed phrase
+                      </ion-text>
+                  )
                 </small>
-              </ion-text>
+            </ion-label>
+            <div class="autocomplet-container">
+              <ion-input 
+                  [(ngModel)]="secret[0]"
+                  [autofocus]="true"
+                  type="text" 
+                  placeholder="type password..."></ion-input>
+              <ion-note [hidden]="((secret[0].length||0) < 1)  || !((secret[0].length||0) <= 5)">
+                minimum length 6 caracters
+              </ion-note>
+            </div>
+          </div>
+          <div class="chips-container" *ngIf="isMnemonicSeedPhrase === true">
+            <ion-label color="medium" position="stacked">
+              Your secert seed 12 words pharse
+                <small>
+                  (
+                    <ion-text color="primary">
+                      <span (click)="toggleImportSeedWords()">
+                        {{isImportSeedWords ? 'generate' : 'import'}} seed phrase
+                      </span>
+                    </ion-text> or 
+                      <ion-text color="primary">
+                        <span (click)="toggleIsMnemonicSeedPhrase()">use simple password</span>
+                      </ion-text>
+                  )
+                </small>
             </ion-label>
             <ion-chip 
                 *ngFor="let w of secret; let i = index" 
@@ -61,6 +90,7 @@
               </ion-list>
             </div>
           </div>
+
           <ion-item 
                 lines="none" 
                 [disabled]="isWoring$ | async"
@@ -74,7 +104,7 @@
           <ion-button 
               class="ion-margin-vertical" 
               *ngIf="(action$|async) === 'encrypt'"
-              [disabled]="(isWoring$ | async )|| (secret.length < 12) || (text.length === 0)"
+              [disabled]="(isWoring$ | async ) || (isMnemonicSeedPhrase ? secret.length < 12 : secret[0].length < 6) || (text.length === 0)"
               (click)="encrypt()">
             {{actions}}
           </ion-button>

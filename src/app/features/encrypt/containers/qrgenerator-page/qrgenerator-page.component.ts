@@ -51,7 +51,8 @@ export class QrgeneratorPageComponent {
   
   actions: 'encrypt'|'decrypt' = 'encrypt'
   isImportSeedWords = false;
-  secret: string[] = generateMnemonic(wordlist).split(' ');
+  isMnemonicSeedPhrase: boolean = false;
+  secret: string[] = [''];
   text: string = '';
   seedWordList: string[] = [];
 
@@ -217,7 +218,17 @@ export class QrgeneratorPageComponent {
     if (this.isImportSeedWords) {
       this.secret = [];
     } else {
+      this.isMnemonicSeedPhrase = true;
       this.secret = generateMnemonic(wordlist).split(' ');
+    }
+  }
+
+  async toggleIsMnemonicSeedPhrase() {
+    this.isMnemonicSeedPhrase = !this.isMnemonicSeedPhrase;
+    if (this.isMnemonicSeedPhrase) {
+      this.secret = generateMnemonic(wordlist).split(' ');
+    } else {
+      this.secret = [''];
     }
   }
 
