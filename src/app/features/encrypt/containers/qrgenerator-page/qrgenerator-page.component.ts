@@ -69,11 +69,11 @@ export class QrgeneratorPageComponent {
       header: 'Warning',
       message: `
         <p>
-          Please make sure that you have backup of your seed words. <br/>
+          Please make sure that you have backup of your ${this. isMnemonicSeedPhrase ? 'seed phrase words': 'password'}. <br/>
           If you lose your seed words, you will definitly lose access to your encryppted data.
         </p>
         <ion-text color="primary">
-          <p>Current seed phrase words:</p>
+          <p>Current ${this. isMnemonicSeedPhrase ? 'seed phrase words': 'password'}:</p>
           <pre class="ion-text-wrap">
             ${this.secret.join(' ')}
           </pre>
@@ -124,9 +124,26 @@ export class QrgeneratorPageComponent {
       .build(); 
     // toggle global state
     this.isWoring$.next(false);
-    this.text = '';
     this.isImportSeedWords = false;
+    // this.text = '';
     // this.secret = generateMnemonic(wordlist).split(' ');
+    const ionWarning = await this._alertCtrl.create({
+      header: 'Caution',
+      message: `
+        <p>
+          Please download and try to scan the QR code to make sure that your encrypted data backup was successful and can be recovered. <br/>
+          If you have any scanning issue, try again to generate a new QR code.
+        </p>
+        <p>
+          And again, make sure that you have backup of your ${this. isMnemonicSeedPhrase ? 'seed words': 'password'}. <br/>
+          <b>If you lose your seed words, you will definitly lose access to your encryppted data</b>.
+        </p>
+        `,
+      buttons: [
+        { text: 'ok', role: 'confirm' }
+      ]
+    });
+    await ionWarning.present();
   }
 
   async download() {
