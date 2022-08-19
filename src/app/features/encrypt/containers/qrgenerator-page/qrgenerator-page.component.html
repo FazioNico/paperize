@@ -111,11 +111,13 @@
           <div *ngIf="(action$|async) === 'decrypt'">
             <ion-button 
                 class="ion-margin-vertical" 
+                [disabled]="(isWoring$ | async ) || (isMnemonicSeedPhrase ? (secret.length < 12) : (secret[0].length < 6)) "
                 (click)="inputFile.click()">
               file scan
             </ion-button>
             <ion-button 
                 class="ion-margin-vertical" 
+                [disabled]="(isWoring$ | async ) || (isMnemonicSeedPhrase ? (secret.length < 12) : (secret[0].length < 6)) "
                 (click)="scanWithCamera()">
               camera scan
             </ion-button>
