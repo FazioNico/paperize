@@ -36,6 +36,9 @@
             }
         }
     }
+    ion-input, ion-textarea {
+        font-family: monospace, 'Courier New', Courier, serif;
+    }
     ion-textarea {
         border: solid 1px var(--ion-color-medium);
         border-radius: 6px;
