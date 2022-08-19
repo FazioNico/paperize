@@ -113,8 +113,8 @@ export class QrgeneratorPageComponent {
         canvas, 
         {
           size: {
-            width: window.innerWidth,
-            height: window.innerWidth
+            width: 600,
+            height: 600
           }
         }
       )
