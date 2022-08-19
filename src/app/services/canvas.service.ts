@@ -17,16 +17,12 @@ export class CanvasService {
     if (!context) {
       throw new Error('[ERROR] Canvas context is not set.');
     }
-    const {size: {
-      width = canvas.width,
-      height = canvas.height,
-    } = {}} = options||{};
     this.state$.next('[INFO] set Canvas element to build QR code...');
     this._canvas = canvas;
     this._context = context;
     this._setSize(options?.size);
     this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    this._context.font = '50px Arial';
+    this._context.font = '30px Arial';
     return this;
   }
 
@@ -94,7 +90,7 @@ export class CanvasService {
     this._context.fillText(
       text,
       this._canvas.width / 2 - textWidth / 2,
-      this._canvas.height - 10
+      this._canvas.height - 15
     );
     return this;
   }
