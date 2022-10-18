@@ -1,6 +1,6 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { AlertController, IonToggle } from '@ionic/angular';
 import { generateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import { toDataURL } from 'qrcode';
@@ -26,8 +26,9 @@ interface IComponentState {
   styleUrls: ['./qrgenerator-page.component.scss']
 })
 export class QrgeneratorPageComponent {
-
-  @ViewChild('canvas', {static: false, read: ElementRef}) canvasElement!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('toggleElement', { static: false, read: ElementRef }) readonly toggleEncryptionElement!: ElementRef<IonToggle>;
+  @ViewChild('qrVideoElement', {static: false, read: ElementRef}) readonly qrVideoElement!: ElementRef<HTMLVideoElement>;
+  @ViewChild('canvas', {static: false, read: ElementRef}) readonly canvasElement!: ElementRef<HTMLCanvasElement>;
   public readonly result$: BehaviorSubject<IResult>  = new BehaviorSubject(null as any);
   public readonly action$: Observable<'encrypt'|'decrypt'> = this._route.queryParams
     .pipe(
@@ -64,45 +65,57 @@ export class QrgeneratorPageComponent {
     private readonly _scanService: ScanService
   ) {}
 
+  get isEncryptionEnabled() {
+    return this.toggleEncryptionElement?.nativeElement?.checked;
+  }
+
   async encrypt() {
-    const ionAlert = await this._alertCtrl.create({
-      header: 'Warning',
-      message: `
-        <p>
-          Please make sure that you have backup of your ${this. isMnemonicSeedPhrase ? 'seed phrase words': 'password'}. <br/>
-          If you lose your seed words, you will definitly lose access to your encryppted data.
-        </p>
-        <ion-text color="primary">
-          <p>Current ${this. isMnemonicSeedPhrase ? 'seed phrase words': 'password'}:</p>
-          <pre class="ion-text-wrap">
-            ${this.secret.join(' ')}
-          </pre>
-        </ion-text>
-        `,
-      buttons: [
-        { text: 'Cancel', role: 'cancel' },
-        { text: 'Continue', role: 'confirm' }
-      ]
-    });
-    await ionAlert.present();
-    const { role } = await ionAlert.onDidDismiss();
-    if (role !== 'confirm') {
-      return;
+    let encryptedText, hash;
+    if (this.isEncryptionEnabled) {
+      const ionAlert = await this._alertCtrl.create({
+        header: 'Warning',
+        message: `
+          <p>
+            Please make sure that you have backup of your ${this. isMnemonicSeedPhrase ? 'seed phrase words': 'password'}. <br/>
+            If you lose your seed words, you will definitly lose access to your encryppted data.
+          </p>
+          <ion-text color="primary">
+            <p>Current ${this. isMnemonicSeedPhrase ? 'seed phrase words': 'password'}:</p>
+            <pre class="ion-text-wrap">
+              ${this.secret.join(' ')}
+            </pre>
+          </ion-text>
+          `,
+        buttons: [
+          { text: 'Cancel', role: 'cancel' },
+          { text: 'Continue', role: 'confirm' }
+        ]
+      });
+      await ionAlert.present();
+      const { role } = await ionAlert.onDidDismiss();
+      if (role !== 'confirm') {
+        return;
+      }
+      // toggle global state
+      this.isWoring$.next(true);
+      const text = this.text;
+      // sleep to allow angular gennerate templpate html
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      // start logic
+      const { encrypted, shortHash } = await this._service.encryptString(
+        this.secret.join(' '),
+        text
+      );
+      encryptedText = encrypted;
+      hash = shortHash;
     }
     // toggle global state
     this.isWoring$.next(true);
-    const text = this.text;
-    // sleep to allow angular gennerate templpate html
-    await new Promise((resolve) => setTimeout(resolve, 25));
-    // start logic
-    const { encrypted, shortHash } = await this._service.encryptString(
-      this.secret.join(' '),
-      text
-    );
-    const imgUrl = await this.generateQR(encrypted);
+    hash = hash || Date.now().toString();
+    const imgUrl = await this.generateQR(encryptedText||this.text);
     this.result$.next({
-      encryptedText: encrypted,
-      shortHash
+      encryptedText: encryptedText||this.text,
+      shortHash: hash,
     });
     // sleep to allow angular gennerate templpate html
     await new Promise((resolve) => setTimeout(resolve, 1025));
@@ -120,7 +133,7 @@ export class QrgeneratorPageComponent {
       )
       .setbackground('#fff')
       .drawImage(imgUrl)
-      .drawText(shortHash)
+      .drawText(hash)
       .build(); 
     // toggle global state
     this.isWoring$.next(false);
@@ -131,7 +144,7 @@ export class QrgeneratorPageComponent {
       header: 'Caution',
       message: `
         <p>
-          Please download and try to scan the QR code to make sure that your encrypted data backup was successful and can be recovered. <br/>
+          Please download and try to scan the QR code to make sure that your data backup was successful and can be recovered. <br/>
           If you have any scanning issue, try again to generate a new QR code.
         </p>
         <p>
@@ -156,18 +169,24 @@ export class QrgeneratorPageComponent {
     const file = $event.target.files[0];
     const {decodedText = '', result} = await this._scanService.scanFile(file);
     console.log(`Code matched = ${decodedText}`, result);
-    const decrypted = await this._service.decryptString(
-      this.secret.join(' '),
-      decodedText
-    );
-    console.log('[INFO] decrypted text:', decrypted);
-    this.result$.next({
-      decryptedText: decrypted
-    }); 
+    if (this.isEncryptionEnabled) {
+      const decrypted = await this._service.decryptString(
+        this.secret.join(' '),
+        decodedText
+      );
+      console.log('[INFO] decrypted text:', decrypted);
+      this.result$.next({
+        decryptedText: decrypted
+      }); 
+    } else {
+      this.result$.next({
+        decryptedText: decodedText
+      });    
+    }
   }
 
   async scanWithCamera() {
-    const {decodedText} = await this._scanService.scanWithCamera("qrcode-reader");
+    const {decodedText} = await this._scanService.scanWithCamera(this.qrVideoElement.nativeElement);
     console.log(`Code matched = ${decodedText}`);
   }
 
@@ -176,10 +195,10 @@ export class QrgeneratorPageComponent {
     try {
       const qr =  await toDataURL(text, {
         type: 'image/png',
-        width: 600,
         rendererOpts: {
-          quality: 1
-        }
+          quality: 1,
+        },
+        errorCorrectionLevel: 'L'
       });
       console.log('[INFO] QR code generated.');
       return qr;

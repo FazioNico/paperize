@@ -39,6 +39,9 @@
     ion-input, ion-textarea {
         font-family: monospace, 'Courier New', Courier, serif;
     }
+    .toggle-input-type {
+        cursor: pointer;
+    }
     ion-textarea {
         border: solid 1px var(--ion-color-medium);
         border-radius: 6px;
@@ -76,6 +79,8 @@
         ion-input {
             border: solid 1px var(--ion-color-medium);
             border-radius: 8px 8px 8px 8px;
+            padding-left: 0.5rem!important;
+            --padding-start: 0;
 
             &.active {
                 border-radius: 8px 8px 0 0;

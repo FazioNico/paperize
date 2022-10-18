@@ -1,8 +1,7 @@
 
 import { Injectable } from '@angular/core';
-import { Html5QrcodeScanner, Html5QrcodeScanType, Html5Qrcode } from 'html5-qrcode';
-import { Html5QrcodeResult } from 'html5-qrcode/esm/core';
 import { BehaviorSubject } from 'rxjs';
+import QrScanner from 'qr-scanner';
 
 @Injectable({
   providedIn: 'root'
@@ -10,90 +9,67 @@ import { BehaviorSubject } from 'rxjs';
 export class ScanService {
 
   public readonly state$ = new BehaviorSubject(null as any);
-  private _html5QrcodeScanner!: Html5Qrcode|undefined;
+  private _scanner!: QrScanner;
 
-  async scanWithCamera(htmlElementId: string): Promise<{
-    decodedText?: string, result?: Html5QrcodeResult
+  async scanWithCamera(htmlVideoElement: HTMLVideoElement): Promise<{
+    decodedText?: string, result?: any
   }> {
     this.state$.next('[INFO] Initialize scanner...');
-    const html5QrcodeScanner = new Html5Qrcode(
-      htmlElementId,
-      { verbose: false }
-    );
-    this._html5QrcodeScanner = html5QrcodeScanner;
-    this.state$.next('[INFO] Get available camera...');
-    await Html5Qrcode.getCameras()
-      .then(devices => {
-      /**
-       * devices would be an array of objects of type:
-       * { id: "id", label: "label" }
-       */
-      if (devices && devices.length) {
-        var cameraId = devices?.[0]?.id;
-        return cameraId;
-      } else {
-        throw new Error('No camera found');
-      }
-    });
-    this.state$.next('[INFO] Start scanning...');
-    const config = { fps: 10, qrbox: { width: 600, height: 600 } };
-    const decodedText: string = await new Promise((resolve, reject) => {
-      if (!this._html5QrcodeScanner){
-        throw Error('QrcodeScanner not initialized!')
-      }
-      this._html5QrcodeScanner.start(
+    // check camera availability
+    const hasCamera = await QrScanner.hasCamera();
+    const cameraIsAvailable = await QrScanner.listCameras()
+      .then((cameras) => cameras.length > 0)
+      .catch(() => false);
+    if (!hasCamera || !cameraIsAvailable) {
+      this.state$.next('[ERROR] No camera available.');
+      throw new Error('[ERROR] No camera available.');
+    }
+    const result: QrScanner.ScanResult = await new Promise(async (resolve, reject) => {
+      // create and Configure scanner
+      this._scanner = new QrScanner(
+        htmlVideoElement, 
+        // success Methood
+        result => {
+          this._scanner.stop();
+          this.state$.next('[INFO] Scanning with success.');
+          resolve(result);
+        }, 
+        // Options
         {
-          facingMode: "user"
-        },
-        config,
-        (event) => resolve(event),
-        (error) => reject(error)
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        }
       );
+      this.state$.next('[INFO] Start scanning...');
+      // start scanning
+      await this._scanner.start();
     });
-    this.state$.next('[INFO] Scanning...');
+    // return result
     return {
-      decodedText
+      decodedText: result.data
     };
-
   }
 
-  async scanFile(htmlElementId: string, file: File): Promise<{
-    decodedText?: string, result?: Html5QrcodeResult
+  async scanFile(file: File): Promise<{
+    decodedText?: string, result?: any
   }> {
-    const html5QrcodeScanner = new Html5Qrcode(
-      htmlElementId,
-      { verbose: false }
-    );
-    this._html5QrcodeScanner = html5QrcodeScanner;
     await new Promise((resolve) => {
       const t = setTimeout(() => resolve(true), 250);
     });
-    const decodedText = await this._html5QrcodeScanner
-      .scanFile(file, false)
-      .catch((err:Error) => {
-        throw err.message;
+    const {data: decodedText = 'No QR code found.'} = await QrScanner
+      .scanImage(file, { returnDetailedScanResult: true })
+      .catch(error => {
+        throw error || 'Error scanning image'
       });
+    console.log('decodedText', decodedText);    
     return {
       decodedText
     };
   }
 
   async stop() {
-    if (!this._html5QrcodeScanner) {
-      throw new Error('Html5QrcodeScanner is not initialized');
-    }
-    await this._html5QrcodeScanner.clear();
-    this._html5QrcodeScanner = undefined;
+    throw new Error('Not implemented');
   }
 
-  private async _onScanSuccess(decodedText: string, decodedResult: Html5QrcodeResult) {
-    // handle the scanned code as you like, for example:
-    console.log(`Code matched = ${decodedText}`, decodedResult);
-  }
-  
-  private async _onScanFailure(error: any) {
-    // handle scan failure, usually better to ignore and keep scanning.
-    // for example:
-    console.warn(`Code scan error = ${error}`);
-  }
+  private async _cameraScanResult() {}
 }

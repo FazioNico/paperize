@@ -17,7 +17,7 @@
           <ion-text color="primary">
             <h2>{{(action$|async) === 'encrypt' ? 'Encryption' : 'Decrypting'}} data</h2>
           </ion-text>
-          <div class="chips-container" *ngIf="isMnemonicSeedPhrase === false">
+          <div class="chips-container" *ngIf="isMnemonicSeedPhrase === false && toggleEncryptionElement?.nativeElement?.checked === true">
             <ion-label color="medium" position="stacked">
               Your secert password
                 <small (click)="toggleIsMnemonicSeedPhrase()">
@@ -28,18 +28,25 @@
                   )
                 </small>
             </ion-label>
-            <div class="autocomplet-container">
+            <ion-item class="autocomplet-container" lines="none">
               <ion-input 
+                  #passwordInputElement
                   [(ngModel)]="secret[0]"
                   [autofocus]="true"
                   type="text" 
-                  placeholder="type password..."></ion-input>
-              <ion-note [hidden]="((secret[0].length||0) < 1)  || !((secret[0].length||0) <= 5)">
-                minimum length 6 caracters
-              </ion-note>
-            </div>
+                  placeholder="type password...">
+              </ion-input>
+              <ion-icon 
+                class="toggle-input-type"
+                slot="end"
+                [name]="passwordInputElement.type === 'text' ? 'eye-outline' : 'eye-off-outline'"
+                (click)="passwordInputElement.type === 'text' ? passwordInputElement.type = 'password' : passwordInputElement.type = 'text'"></ion-icon>
+            </ion-item>
+            <ion-note [hidden]="((secret[0].length||0) < 1)  || !((secret[0].length||0) <= 5)">
+              minimum length 6 caracters
+            </ion-note>
           </div>
-          <div class="chips-container" *ngIf="isMnemonicSeedPhrase === true">
+          <div class="chips-container" *ngIf="isMnemonicSeedPhrase === true && toggleEncryptionElement.nativeElement.checked === true">
             <ion-label color="medium" position="stacked">
               Your secert seed 12 words pharse
                 <small>
@@ -104,26 +111,47 @@
                 [(ngModel)]="text" placeholder="type data to encrypt here..."></ion-textarea>
             <span class="maxCount">{{textareaEl?.value?.length||0}}/200</span>
           </ion-item>
+          <ion-item 
+            lines="none" 
+            [disabled]="isWoring$ | async">
+            <ion-label color="medium">
+              Enable OpenPGP Encryption <small>( <a rel="noopener" href="https://openpgpjs.org/" target="_blank">how it work?</a> )</small>
+            </ion-label>
+            <ion-toggle #toggleElement checked="true" slot="end"></ion-toggle>
+          </ion-item>
           <ion-button 
               class="ion-margin-vertical" 
-              *ngIf="(action$|async) === 'encrypt'"
+              *ngIf="(action$|async) === 'encrypt' && toggleEncryptionElement?.nativeElement?.checked === true"
               [disabled]="(isWoring$ | async ) || (isMnemonicSeedPhrase ? secret.length < 12 : secret[0].length < 6) || (text.length === 0)"
               (click)="encrypt()">
-            {{actions}}
+            Generate QrCode
+          </ion-button>
+          <ion-button 
+              class="ion-margin-vertical" 
+              *ngIf="(action$|async) === 'encrypt' && toggleEncryptionElement?.nativeElement?.checked === false"
+              (click)="encrypt()">
+            Generate QrCode
           </ion-button>
           <div *ngIf="(action$|async) === 'decrypt'">
             <ion-button 
+                *ngIf="toggleEncryptionElement?.nativeElement?.checked === true"
                 class="ion-margin-vertical" 
                 [disabled]="(isWoring$ | async ) || (isMnemonicSeedPhrase ? (secret.length < 12) : (secret[0].length < 6)) "
                 (click)="inputFile.click()">
               file scan
             </ion-button>
             <ion-button 
+              *ngIf="toggleEncryptionElement?.nativeElement?.checked === false || false"
+              class="ion-margin-vertical"
+              (click)="inputFile.click()">
+            file scan
+          </ion-button>
+            <!-- <ion-button 
                 class="ion-margin-vertical" 
                 [disabled]="(isWoring$ | async ) || (isMnemonicSeedPhrase ? (secret.length < 12) : (secret[0].length < 6)) "
                 (click)="scanWithCamera()">
               camera scan
-            </ion-button>
+            </ion-button> -->
             <input 
                 #inputFile
                 title="file"
@@ -136,15 +164,16 @@
           <ion-text color="medium">
             <p *ngIf="(action$|async) === 'encrypt'">
               You already have a backup QrCode? <br/>
-              Go to <a [routerLink]="'./'" [queryParams]="{'action': 'decrypt'}">decrypt</a>.
+              Go to <a [routerLink]="'./'" [queryParams]="{'action': 'decrypt'}">decrypt</a> page.
             </p>
             <p *ngIf="(action$|async) === 'decrypt'">
               You want backup secret data as QR Code? <br/>
-              Go to <a [routerLink]="'./'" [queryParams]="{'action': 'encrypt'}">encrypt</a>.
+              Go to <a [routerLink]="'./'" [queryParams]="{'action': 'encrypt'}">encrypt</a> page.
             </p>
           </ion-text>
         </div>
       </ion-col>
+      <!-- right side -->
       <ion-col 
           *ngIf="(action$|async) === 'encrypt'" 
           size="12" 
@@ -187,6 +216,9 @@
             {{decryptedText}}
         </div>
         <ng-template #defaultTemplate>
+          <!-- <div id="video-container">
+            <video #qrVideoElement></video>
+          </div> -->
           <ion-text color="light">
             <small>
               Scan QR Code to decrypt secret data
