@@ -95,11 +95,14 @@
                 lines="none" 
                 [disabled]="isWoring$ | async"
                 *ngIf="(action$|async) === 'encrypt'">
-            <ion-label color="medium" position="stacked">Datas to encrypt</ion-label>
+            <ion-label color="medium" position="stacked">Datas to encrypt <small>(max 200 characters)</small></ion-label>
             <ion-textarea 
                 #textareaEl 
+                minlength="5"
+                maxlength="200"
                 [disabled]="(isWoring$ | async )||false"
                 [(ngModel)]="text" placeholder="type data to encrypt here..."></ion-textarea>
+            <span class="maxCount">{{textareaEl?.value?.length||0}}/200</span>
           </ion-item>
           <ion-button 
               class="ion-margin-vertical" 

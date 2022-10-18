@@ -44,6 +44,15 @@
         border-radius: 6px;
         padding: 0.5em;
     }
+    span.maxCount {
+        font-size: 0.8rem;
+        display: block;
+        margin-right: 0;
+        margin-top: 8px;
+        position: relative;
+        text-align: right;
+        opacity: 0.5;
+    }
     .form-container {
         max-width: 618px;
     }
