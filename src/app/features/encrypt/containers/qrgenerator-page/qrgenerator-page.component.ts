@@ -154,7 +154,7 @@ export class QrgeneratorPageComponent {
 
   async scanFile($event: any) {
     const file = $event.target.files[0];
-    const {decodedText = '', result} = await this._scanService.scanFile("qrcode-reader", file);
+    const {decodedText = '', result} = await this._scanService.scanFile(file);
     console.log(`Code matched = ${decodedText}`, result);
     const decrypted = await this._service.decryptString(
       this.secret.join(' '),
