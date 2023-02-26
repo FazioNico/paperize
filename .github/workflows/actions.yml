@@ -1,0 +1,52 @@
+name: Valist Publish
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+jobs: 
+  valist_publish:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node JS
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set Version variable
+        run: | 
+          CURRENT_VERSION=$(grep '"version":' package.json | cut -d\" -f4);
+          echo "version=$CURRENT_VERSION" >> $GITHUB_ENV
+      - name: Build Browser App
+        run: npm run build
+        env:
+          NG_APP_VERSION: ${{env.version}}
+          NG_APP_WALLET_SERVICE_APIKEY: ${{ secrets.NG_APP_WALLET_SERVICE_APIKEY }}
+
+      - name: Tag last-release
+        shell: bash
+        run: |
+          git tag -f  ${{ env.version }};
+          git push origin  ${{ env.version }} --force
+      - name: Valist Deploy
+        uses: valist-io/valist-github-action@v2
+        with:
+          private-key: ${{ secrets.VALIST_SIGNER }}
+          account: 0xfazio
+          project: paperize
+          release: ${{ env.version }}
+          
+          platform-web: dist/paperize
